@@ -17,14 +17,71 @@
 - name: Deploy password file
   copy:
     content: '{{ vault_repo_password }}'
-    dest: '/var/lib/restic/repopw'
-    mode: '0600'
+    dest: '{{ restic_password_file }}'
+    mode: '0400'
     owner: 'root'
     group: 'root'
   no_log: true
   ignore_errors: true
 
-- name: Deploy cron script
+- name: Copy backup id_rsa key
+  copy:
+    src: '{{ item }}'
+    dest: '/var/lib/restic/'
+    mode: '0400'
+    owner: 'root'
+    group: 'root'
+  with_items:
+    - "restic/keys/{{ rsa_key }}"
+    - "restic/keys/{{ rsa_key }}.pub"
+  when: sftp_server != ''
+
+- name: check if ssh config file exists
+  stat:
+    path: /root/.ssh/config
+  register: stat_ssh_config
+  when: sftp_server != ''
+
+- name: Add key to ssh_config
+  blockinfile:
+    path: /root/.ssh/config
+    create: true
+    mode: 0400
+    owner: root
+    group: root
+    block: |
+      Host {{ sftp_server }}
+        User {{ sftp_user }}
+        IdentityFile /var/lib/restic/{{ rsa_key }}
+        StrictHostKeyChecking no
+        UserKnownHostsFile=/dev/null
+  when: sftp_server != ''
+
+- name: Deploy environment variables
+  template:
+    src: 'env.j2'
+    dest: '/var/lib/restic/env'
+    mode: '0700'
+
+- name: copy util scripts
+  copy:
+    src: 'files/'
+    dest: '/var/lib/restic/'
+    mode: '0755'
+
+- name: init remote repositories
+  shell: /var/lib/restic/backup_init.sh {{ item }}
+  with_items:
+    - mysql
+    - data
+
+- name: Deploy run script
+  template:
+    src: 'run.sh.j2'
+    dest: '/var/lib/restic/run.sh'
+    mode: '0700'
+
+- name: Deploy cronjob
   template:
     src: 'restic.cron.j2'
     dest: '/etc/cron.d/restic'

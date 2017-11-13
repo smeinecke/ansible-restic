@@ -4,39 +4,9 @@
 
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-RESTIC_REPOSITORY={{ restic_repo }}
-RESTIC_PASSWORD_FILE={{ restic_password_file }}
-{% set restic_stdin = '| restic backup --stdin' %}
-{% macro tags(tags) -%}
-  {% if tags is defined %}{% for tag in tags %} --tag {{ tag }}{% endfor %}{% endif %}
-{%- endmacro %}
-{% macro hostname(h) -%}
-  {% if h is defined %} --hostname {{ h }}{% endif %}
-{%- endmacro %}
-{% macro redirection(rn) -%}
-  {% if rn is defined %} {{ rn }}{% elif restic_redirection is defined %} {{ restic_redirection }}{% endif %}
-{%- endmacro %}
-
-{#
-  We're not going to use compression here as deduplication should be
-  significantly more efficient in the long run.
-  See the following issues for reference:
-  https://github.com/restic/restic/issues/790
-  https://github.com/restic/restic/issues/21
-#}
-
-{% if restic_jobs is defined %}
-  {% for job in restic_jobs %}
-    {% if job.type == 'db_mysql' %}
-{{ job.at }}  {{ job.user | default('root') }}   mysqldump --routines --add-drop-table --default-character-set=utf8 {{ job.arg }} {{ restic_stdin }} --stdin-filename {{ job.type }}_{{ job.arg }}.sql{{ hostname(job.hostname) }}{{ tags(job.tags) }}{{ redirection(job.redirection) }}
-    {% elif job.type == 'db_pgsql' %}
-{{ job.at }}  {{ job.user | default('root') }}   su -c '/usr/bin/pg_dump --encoding=UTF8 "{{ job.arg }}"' postgres  {{ restic_stdin }} --stdin-filename {{ job.type }}_{{ job.arg }}.sql{{ hostname(job.hostname) }}{{ tags(job.tags) }}{{ redirection(job.redirection) }}
-    {% endif %}
-  {% endfor %}
-{% endif %}
-
-{% if restic_jobs_raw is defined %}
-  {% for job in restic_jobs_raw %}
-{{ job.at }}  {{ job.user | default('root') }}  {{ job.command }}{{ redirection(job.redirection) }}
-  {% endfor %}
+{% if cron.mailto is defined %}
+MAILTO={{ cron.mailto }}
+{{ cron.at }} {{ cron.user | default('root') }} /var/lib/restic/run.sh 2>&1 | tee /var/log/restic/backup.log; echo "Exit code: $?" >> /var/log/restic/backup.log
+{% else %}
+{{ cron.at }}  {{ cron.user | default('root') }} /var/lib/restic/run.sh >/var/log/restic/backup.log 2>&1; echo "Exit code: $?" >> /var/log/restic/backup.log
 {% endif %}

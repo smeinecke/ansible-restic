@@ -1,0 +1,36 @@
+#!/bin/bash -e
+#jinja2: lstrip_blocks: "True"
+# restic backup jobs
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+. /var/lib/restic/env
+
+[ -r /var/lib/restic/pre ] && . /var/lib/restic/pre
+
+{% if restic_jobs is defined %}
+{% for job in restic_jobs %}
+{% if job.type == 'mysql_dump' %}
+/var/lib/restic/backup_mysql_dump.sh {{ job.cnf | default('') }} || exit 1
+{% elif job.type == 'mysql_innobackup' %}
+/var/lib/restic/backup_mysql_innobackup.sh {{ job.container | default('""') }} {{ job.cnf | default('') }} || exit 1
+{% endif %}
+{% endfor %}
+{% endif %}
+
+export RESTIC_REPOSITORY="${RESTIC_REPOSITORY_BASE}data/"
+{% if restic_jobs_raw is defined %}
+{% for job in restic_jobs_raw %}
+echo "{{ job.command }}"
+{{ job.command }}
+{% endfor %}
+{% endif %}
+
+{% if run_restic_forget %}
+export RESTIC_REPOSITORY="${RESTIC_REPOSITORY_BASE}data/"
+restic forget -q {{ restic_forget }}
+export RESTIC_REPOSITORY="${RESTIC_REPOSITORY_BASE}mysql/"
+restic forget -q {{ restic_forget }}
+{% endif %}
+
+[ -r /var/lib/restic/post ] && . /var/lib/restic/post
+
+exit 0
