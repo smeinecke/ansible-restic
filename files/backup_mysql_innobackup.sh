@@ -8,8 +8,8 @@ fi
 
 if [[ "$1" != "" ]]; then
     if [ ! -f /var/lib/restic/.xtrabackup_installed_$1 ]; then
-        docker exec -i "$1" apt update; apt install xtrabackup
-        docker exec -i "$1" apt install xtrabackup
+        docker exec -i "$1" apt-get update
+        docker exec -i "$1" apt-get install -y xtrabackup
         touch /var/lib/restic/.xtrabackup_installed_$1
     fi
     docker cp $df $1:/root/.my.cnf
