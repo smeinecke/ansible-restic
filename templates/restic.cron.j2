@@ -6,7 +6,7 @@ SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 {% if cron.mailto is defined %}
 MAILTO={{ cron.mailto }}
-{{ cron.at }} {{ cron.user | default('root') }} /var/lib/restic/run.sh 2>&1 | tee /var/log/restic/backup.log; echo "Exit code: $?" >> /var/log/restic/backup.log
+{{ cron.at }} {{ cron.user | default('root') }} /var/lib/restic/run.sh 2>&1 | tee /var/log/restic/backup.log; echo "Exit code: $?" >>/var/log/restic/backup.log
 {% else %}
-{{ cron.at }}  {{ cron.user | default('root') }} /var/lib/restic/run.sh >/var/log/restic/backup.log 2>&1; echo "Exit code: $?" >> /var/log/restic/backup.log
+{{ cron.at }}  {{ cron.user | default('root') }} /var/lib/restic/run.sh >/var/log/restic/backup.log 2>&1; echo "Exit code: $?" >>/var/log/restic/backup.log
 {% endif %}

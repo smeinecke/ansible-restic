@@ -26,8 +26,10 @@ echo "{{ job.command }}"
 
 {% if run_restic_forget %}
 export RESTIC_REPOSITORY="${RESTIC_REPOSITORY_BASE}data/"
+restic unlock
 restic forget -q {{ restic_forget }}
 export RESTIC_REPOSITORY="${RESTIC_REPOSITORY_BASE}mysql/"
+restic unlock
 restic forget -q {{ restic_forget }}
 {% endif %}
 

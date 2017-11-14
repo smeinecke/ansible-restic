@@ -1,11 +1,11 @@
 ---
-restic_install_method: github
+restic_install_method: "apt"
 restic_install_path: '/usr/local/bin'
 restic_password_file: '/var/lib/restic/repopw'
 restic_repo: 'sftp:{{ sftp_user }}@{{ sftp_server }}:'
 restic_url: 'https://github.com/restic/restic/releases/download/v{{ restic_version }}/restic_{{ restic_version }}_{{ _platform_suffix }}.bz2'
 restic_tmp_dir: '/tmp'
-restic_version: '0.7.3'
+restic_version: '0.7.3+debian0-2'
 run_restic_forget: false
 restic_forget: '--keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 75'
 sftp_server: ''

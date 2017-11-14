@@ -32,21 +32,15 @@
     owner: 'root'
     group: 'root'
   with_items:
-    - "restic/keys/{{ rsa_key }}"
-    - "restic/keys/{{ rsa_key }}.pub"
-  when: sftp_server != ''
-
-- name: check if ssh config file exists
-  stat:
-    path: /root/.ssh/config
-  register: stat_ssh_config
+    - "hetzner-sftp/keys/{{ rsa_key }}"
+    - "hetzner-sftp/keys/{{ rsa_key }}.pub"
   when: sftp_server != ''
 
 - name: Add key to ssh_config
   blockinfile:
     path: /root/.ssh/config
     create: true
-    mode: 0400
+    mode: 0644
     owner: root
     group: root
     block: |
@@ -54,7 +48,6 @@
         User {{ sftp_user }}
         IdentityFile /var/lib/restic/{{ rsa_key }}
         StrictHostKeyChecking no
-        UserKnownHostsFile=/dev/null
   when: sftp_server != ''
 
 - name: Deploy environment variables
